@@ -18,8 +18,8 @@ bool is_sorted(float *v)
 {
   for (int i = 1; i < NUM; i++) {
     if (v[i-1] > v[i]) {
-      printf("Not sorted at iterators i-1 = %i and i = %i \n", i-1, i);
       printf("v[i-1] = %f > %f = v[i] \n", v[i-1], v[i]);
+      printf("Not sorted at iterators i-1 = %i and i = %i \n", i-1, i);
       return false;
     }
   }
@@ -142,7 +142,7 @@ void sort_parallel_v1(int number)
 // ---------------------------------------------------------------------------
 // Parallele Version 2 (mit sections)
 
-void quicksort_p2(float *v, int start, int end) 
+void quicksort_p2(float *v, int start, int end, int depth) 
 {
   int i = start, j = end;
   float pivot;
@@ -160,18 +160,18 @@ void quicksort_p2(float *v, int start, int end)
       }
   } while (i <= j);
 
-  #pragma omp sections nowait
+  #pragma omp parallel sections if (depth < 1)
   {
     #pragma omp section
     {
-    if (start < j)
-       quicksort_p2(v, start, j);
+      if (start < j)
+         quicksort_p2(v, start, j, depth+1);
     }
-    
+
     #pragma omp section
     {
     if (i < end)
-       quicksort_p2(v, i, end);
+       quicksort_p2(v, i, end, depth+1);
     }
   }
 }
@@ -184,20 +184,20 @@ void sort_parallel_v2(int number)
   int iter = number;
   double t_start, t_end;
 
-  #pragma omp parallel
+/*  #pragma omp parallel
   {
     #pragma omp single
-    {
+    {*/
       t_start = omp_get_wtime();
       for (int i = 0; i < iter; i++) {
           for (int j = 0; j < NUM; j++)
               v[j] = (float)rand();
 
-          quicksort_p2(v, 0, NUM-1);
+          quicksort_p2(v, 0, NUM-1, 0);
       }
       t_end = omp_get_wtime();
-    }
-  }
+/*    }
+  }*/
 
   if (is_sorted(v)) {
     printf("Time for parallel version 2: %f \n", t_end-t_start);
@@ -205,7 +205,6 @@ void sort_parallel_v2(int number)
     printf("Error: not sorted. \n");
   }
 }
-
 
 // ---------------------------------------------------------------------------
 // Hauptprogramm
