@@ -14,6 +14,19 @@ void swap(float *v, int i, int j)
     v[j] = t;
 }
 
+bool is_sorted(float *v) 
+{
+  for (int i = 1; i < NUM; i++) {
+    if (v[i-1] > v[i]) {
+      printf("Not sorted at iterators i-1 = %i and i = %i \n", i-1, i);
+      printf("v[i-1] = %f > %f = v[i] \n", v[i-1], v[i]);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 //
 // ---------------------------------------------------------------------------
 // Serielle Version von Quicksort (Wirth) 
@@ -58,7 +71,11 @@ void sort_serial(int number)
   }
   t_end = omp_get_wtime();
 
-  printf("Time for serial version: %f \n", t_end-t_start);
+  if (is_sorted(v)) {
+    printf("Time for serial version: %f \n", t_end-t_start);
+  } else {
+    printf("Error: not sorted. \n");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -114,7 +131,12 @@ void sort_parallel_v1(int number)
     }
   }
 
-  printf("Time for parallel version 1: %f \n", t_end-t_start);
+  if (is_sorted(v)) {
+    printf("Time for parallel version 1: %f \n", t_end-t_start);
+  } else {
+    printf("Error: not sorted. \n");
+  }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +199,11 @@ void sort_parallel_v2(int number)
     }
   }
 
-  printf("Time for parallel version 2: %f \n", t_end-t_start);
+  if (is_sorted(v)) {
+    printf("Time for parallel version 2: %f \n", t_end-t_start);
+  } else {
+    printf("Error: not sorted. \n");
+  }
 }
 
 
