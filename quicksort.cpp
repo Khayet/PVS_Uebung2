@@ -9,20 +9,21 @@
 
 void swap(float *v, int i, int j)
 {
-    float t = v[i];
+    float t = v[i]; 
     v[i] = v[j];
     v[j] = t;
 }
 
 
-//serielle Variante
-void quicksort_s(float *v, int start, int end)
+// ---------------------------------------------------------------------------
+// Serielle Version von Quicksort (Wirth) 
+
+void quicksort_s(float *v, int start, int end) 
 {
     int i = start, j = end;
     float pivot;
 
     pivot = v[(start + end) / 2];                         // mittleres Element
-
     do {
         while (v[i] < pivot)
             i++;
@@ -34,117 +35,86 @@ void quicksort_s(float *v, int start, int end)
             j--;
         }
    } while (i <= j);
-
    if (start < j)                                        // Teile und herrsche
        quicksort_s(v, start, j);                      // Linkes Segment zerlegen
    if (i < end)
        quicksort_s(v, i, end);                       // Rechtes Segment zerlegen
 }
 
-// Variante 1: Parallelisierung mit tasks
-void quicksort_v1(float *v, int start, int end)
+void sort_serial(int number)
 {
-    int i = start, j = end;
-    float pivot;
+  float *v;
+  v = (float *) calloc(NUM, sizeof(float));      
 
-    pivot = v[(start + end) / 2];                         // mittleres Element
+  int iter = number;
+  double t_start, t_end;
 
-    do {
-        while (v[i] < pivot)
-            i++;
-        while (pivot < v[j])
-            j--;
-        if (i <= j) {               // wenn sich beide Indizes nicht beruehren
-            swap(v, i, j);
-            i++;
-            j--;
-        }
-   } while (i <= j);
+  t_start = omp_get_wtime();
+  for (int i = 0; i < iter; i++) {
+      for (int j = 0; j < NUM; j++)
+          v[j] = (float)rand();
 
-     #pragma omp task
-     if (start < j)                                        // Teile und herrsche
-         quicksort_v1(v, start, j);                      // Linkes Segment zerlegen
+      quicksort_s(v, 0, NUM-1);
+  }
+  t_end = omp_get_wtime();
 
-     #pragma omp task
-     if (i < end)
-         quicksort_v1(v, i, end);                       // Rechtes Segment zerlegen
+  printf("Time for serial version: %f \n", t_end-t_start);
 }
 
-//Variante 2: Parallelisierung mit sections
-void quicksort_v2(float *v, int start, int end)
+// ---------------------------------------------------------------------------
+// Parallele Version 1 (mit tasks)
+
+void quicksort_p1(float *v, int start, int end) 
 {
-    int i = start, j = end;
-    float pivot;
+  int i = start, j = end;
+  float pivot;
 
-    pivot = v[(start + end) / 2];                         // mittleres Element
+  pivot = v[(start + end) / 2];
+  do {
+      while (v[i] < pivot)
+          i++;
+      while (pivot < v[j])
+          j--;
+      if (i <= j) {
+          swap(v, i, j);
+          i++;
+          j--;
+      }
+ } while (i <= j);
 
-    do {
-        while (v[i] < pivot)
-            i++;
-        while (pivot < v[j])
-            j--;
-        if (i <= j) {               // wenn sich beide Indizes nicht beruehren
-            swap(v, i, j);
-            i++;
-            j--;
-        }
-   } while (i <= j);
+  #pragma omp task
+  if (start < j)
+     quicksort_p1(v, start, j);
 
-   #pragma omp sections
-   {
-     #pragma omp section
-     if (start < j) {                                        // Teile und herrsche
-         quicksort_v2(v, start, j);
-     }                      // Linkes Segment zerlegen
-
-     #pragma omp section
-     if (i < end) {
-         quicksort_v2(v, i, end);                       // Rechtes Segment zerlegen
-     }
-   }
+  #pragma omp task
+  if (i < end)
+     quicksort_p1(v, i, end);
 }
 
-void quicksort_v3(float *v, int start, int end)
+void sort_parallel_v1(int number)
 {
-    int i = start, j = end;
-    float pivot;
+  float *v;
+  v = (float *) calloc(NUM, sizeof(float));      
 
-    pivot = v[(start + end) / 2];                         // mittleres Element
+  int iter = number;
+  double t_start, t_end;
 
-    do {
-        while (v[i] < pivot)
-            i++;
-        while (pivot < v[j])
-            j--;
-        if (i <= j) {               // wenn sich beide Indizes nicht beruehren
-            swap(v, i, j);
-            i++;
-            j--;
-        }
-   } while (i <= j);
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      t_start = omp_get_wtime();
+      for (int i = 0; i < iter; i++) {
+          for (int j = 0; j < NUM; j++)
+              v[j] = (float)rand();
 
-   if (start < j)                                        // Teile und herrsche
-       quicksort_v3(v, start, j);                      // Linkes Segment zerlegen
-   if (i < end)
-       quicksort_v3(v, i, end);                       // Rechtes Segment zerlegen
-}
-
-void sort_serial(int iter) {
-    float *v;                                                         // Feld
-
-    v = (float *) calloc(NUM, sizeof(float));        // Speicher reservieren
-
-    float start, end;
-
-    start = omp_get_wtime();
-    for (int i = 0; i < iter; i++) {               // Wiederhole das Sortieren
-        for (int j = 0; j < NUM; j++)      // Mit Zufallszahlen initialisieren
-            v[j] = (float)rand();
-
-        quicksort_s(v, 0, NUM-1);                                  // Sortierung
+          quicksort_p1(v, 0, NUM-1);
+      }
+      t_end = omp_get_wtime();
     }
-    end = omp_get_wtime();
-    printf("Time for serial version: %f \n", end-start);
+  }
+
+  printf("Time for parallel version 1: %f \n", t_end-t_start);
 }
 
 // ---------------------------------------------------------------------------
@@ -152,78 +122,17 @@ void sort_serial(int iter) {
 
 int main(int argc, char *argv[])
 {
-    float *v;                                                         // Feld
-    int iter;                                                // Wiederholungen
-
     if (argc != 2) {                                      // Benutzungshinweis
-        printf ("Vector sorting\nUsage: %s <NumIter>\n", argv[0]);
+        printf ("Vector sorting\nUsage: %s <NumIter>\n", argv[0]); 
         return 0;
     }
-    iter = atoi(argv[1]);
-    v = (float *) calloc(NUM, sizeof(float));        // Speicher reservieren
 
-    float start, end;
+    int iter;                                                // Wiederholungen             
+    iter = atoi(argv[1]);                               
 
     printf("Perform vector sorting %d times...\n", iter);
-
     sort_serial(iter);
-/*
-    start = omp_get_wtime();
-    for (int i = 0; i < iter; i++) {               // Wiederhole das Sortieren
-        for (int j = 0; j < NUM; j++)      // Mit Zufallszahlen initialisieren
-            v[j] = (float)rand();
-
-        quicksort_s(v, 0, NUM-1);                                  // Sortierung
-    }
-    end = omp_get_wtime();
-    printf("Time for serial version: %f \n", end-start);
-*/
-
-    start = omp_get_wtime();
-    #pragma omp parallel
-    {
-      #pragma omp single
-      {
-        for (int i = 0; i < iter; i++) {               // Wiederhole das Sortieren
-            for (int j = 0; j < NUM; j++)      // Mit Zufallszahlen initialisieren
-                v[j] = (float)rand();
-
-            quicksort_v1(v, 0, NUM-1);                                  // Sortierung
-        }
-      }
-    }
-    end = omp_get_wtime();
-    printf("Time for parallel version 1: %f \n", end-start);
-
-
-    start = omp_get_wtime();
-    #pragma omp parallel
-    {
-      #pragma omp single
-      {
-        for (int i = 0; i < iter; i++) {               // Wiederhole das Sortieren
-            for (int j = 0; j < NUM; j++)      // Mit Zufallszahlen initialisieren
-                v[j] = (float)rand();
-
-            quicksort_v2(v, 0, NUM-1);                                  // Sortierung
-        }
-      }
-    }
-    end = omp_get_wtime();
-    printf("Time for parallel version 2: %f \n", end-start);
-
-
-    start = omp_get_wtime();
-    for (int i = 0; i < iter; i++) {               // Wiederhole das Sortieren
-        for (int j = 0; j < NUM; j++)      // Mit Zufallszahlen initialisieren
-            v[j] = (float)rand();
-
-        quicksort_v3(v, 0, NUM-1);                                  // Sortierung
-    }
-    end = omp_get_wtime();
-    printf("Time for parallel version 3: %f \n", end-start);
-
-
+    sort_parallel_v1(iter);
 
     printf ("\nDone.\n");
     return 0;
