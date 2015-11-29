@@ -1,0 +1,41 @@
+Jakob Herpel, 115115
+Christian Paffrath, 114980
+
+1.) (siehe Quelltext)
+  Variante 1: Parallelisierung mit tasks
+  Variante 2: Parallelisierung mit sections
+  Variante 3: Parallelisierung mit 'manueller' Zuweisung per Ueberpruefung von num_threads
+
+2.) Siehe Funktion is_sorted
+
+3.) Konsolenausgabe auf Rechner mit zwei Kernen:
+
+    Bei 100 Durchlaeufen:
+
+      Perform vector sorting 100 times...
+      Time for serial version: 0.927925
+      Time for parallel version 1: 0.286685
+      Time for parallel version 2: 0.961574
+      Time for parallel version 3: 1.001566
+
+      Done.
+
+    Bei 1000 Durchlaeufen:
+
+      Perform vector sorting 1000 times...
+      Time for serial version: 9.373751
+      Time for parallel version 1: 12.328661
+      Time for parallel version 2: 9.792335
+      Time for parallel version 3: 10.318540
+
+      Done.
+
+    
+    Das heisst bei relativ wenigen Durchlaeufen bringt die Parallelisierung per tasks einen Geschwindigkeitsvorteil. Bei vielen Durchlaeufen hingegen sind alle parallelisierten Varianten langsamer als die serielle.
+
+4.)
+  Alle drei Varianten sind bei vielen Durchlaeufen langsamer oder gleich schnell wie die serielle. Dies liegt vermutlich daran, dass die Aufteilung von Kleinstarbeit auf verschiedene tasks aufwaendiger ist als die serielle Durchfuehrung, das heisst der Overhead wird zu gross.
+  
+  Bei der section- und num_thread-Variante ist die Rekursionstiefe begrenzt; im Grunde wird der Array nur in zwei gleich grosse Haelften geteilt, die dann zwei verschiedenen Threads zugewiesen werden. 
+  
+  Vermutlich ist der Array mit 32767 Elementen zu klein und der Aufwand zur Einteilung auf threads zu gross, um einen bedeutenden Effekt zu erzielen.

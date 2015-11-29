@@ -201,7 +201,7 @@ void sort_parallel_v2(int number)
 }
 
 // ---------------------------------------------------------------------------
-// Parallele Version 3 (mit num_thread)
+// Parallele Version 3 (mit omp_get_thread_num)
 
 void quicksort_p3(float *v, int start, int end, int depth) 
 {
@@ -226,8 +226,8 @@ void quicksort_p3(float *v, int start, int end, int depth)
     int me = omp_get_thread_num();
     int all = omp_get_num_threads();
 
-    if (all > 1) {
-      if (me % 2 == 0) {
+    if (all > 1) {  //falls das conditional pragma oben ausgefuehrt wurde
+      if (me % 2 == 0) {  //Geradzahlige threads uebernehmen die linke haelfte
         if (start < j)
            quicksort_p3(v, start, j, depth+1);
       } else {
