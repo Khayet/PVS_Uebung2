@@ -184,23 +184,84 @@ void sort_parallel_v2(int number)
   int iter = number;
   double t_start, t_end;
 
-/*  #pragma omp parallel
-  {
-    #pragma omp single
-    {*/
-      t_start = omp_get_wtime();
-      for (int i = 0; i < iter; i++) {
-          for (int j = 0; j < NUM; j++)
-              v[j] = (float)rand();
+  t_start = omp_get_wtime();
+  for (int i = 0; i < iter; i++) {
+      for (int j = 0; j < NUM; j++)
+          v[j] = (float)rand();
 
-          quicksort_p2(v, 0, NUM-1, 0);
-      }
-      t_end = omp_get_wtime();
-/*    }
-  }*/
+      quicksort_p2(v, 0, NUM-1, 0);
+  }
+  t_end = omp_get_wtime();
 
   if (is_sorted(v)) {
     printf("Time for parallel version 2: %f \n", t_end-t_start);
+  } else {
+    printf("Error: not sorted. \n");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Parallele Version 3 (mit num_thread)
+
+void quicksort_p3(float *v, int start, int end, int depth) 
+{
+  int i = start, j = end;
+  float pivot;
+
+  pivot = v[(start + end) / 2];
+  do {
+      while (v[i] < pivot)
+          i++;
+      while (pivot < v[j])
+          j--;
+      if (i <= j) {
+          swap(v, i, j);
+          i++;
+          j--;
+      }
+  } while (i <= j);
+
+  #pragma omp parallel if (depth == 0)
+  {
+    int me = omp_get_thread_num();
+    int all = omp_get_num_threads();
+
+    if (all > 1) {
+      if (me % 2 == 0) {
+        if (start < j)
+           quicksort_p3(v, start, j, depth+1);
+      } else {
+        if (i < end)
+           quicksort_p3(v, i, end, depth+1);
+      }
+    } else {
+      if (start < j)
+           quicksort_p3(v, start, j, depth+1);
+      if (i < end)
+           quicksort_p3(v, i, end, depth+1);
+    }
+  } 
+}
+
+void sort_parallel_v3(int number)
+{
+  float *v;
+  v = (float *) calloc(NUM, sizeof(float));      
+
+  int iter = number;
+  double t_start, t_end;
+
+  t_start = omp_get_wtime();
+  for (int i = 0; i < iter; i++) {
+      for (int j = 0; j < NUM; j++)
+          v[j] = (float)rand();
+
+      quicksort_p3(v, 0, NUM-1, 0);
+  }
+  t_end = omp_get_wtime();
+
+  if (is_sorted(v)) {
+    printf("Time for parallel version 3: %f \n", t_end-t_start);
   } else {
     printf("Error: not sorted. \n");
   }
@@ -220,9 +281,11 @@ int main(int argc, char *argv[])
     iter = atoi(argv[1]);                               
 
     printf("Perform vector sorting %d times...\n", iter);
+
     sort_serial(iter);
     sort_parallel_v1(iter);
     sort_parallel_v2(iter);
+    sort_parallel_v3(iter);
 
     printf ("\nDone.\n");
     return 0;
