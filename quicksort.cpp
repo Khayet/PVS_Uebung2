@@ -14,7 +14,7 @@ void swap(float *v, int i, int j)
     v[j] = t;
 }
 
-
+//
 // ---------------------------------------------------------------------------
 // Serielle Version von Quicksort (Wirth) 
 
@@ -122,6 +122,7 @@ void sort_parallel_v1(int number)
 
 void quicksort_p2(float *v, int start, int end) 
 {
+<<<<<<< HEAD
   int i = start, j = end;
   float pivot;
 
@@ -186,6 +187,8 @@ void sort_parallel_v2(int number)
 
 int main(int argc, char *argv[])
 {
+=======
+>>>>>>> cb7345e6a61e9fc4eff849e153a62bb95e2a40ec
     if (argc != 2) {                                      // Benutzungshinweis
         printf ("Vector sorting\nUsage: %s <NumIter>\n", argv[0]); 
         return 0;
@@ -197,7 +200,10 @@ int main(int argc, char *argv[])
     printf("Perform vector sorting %d times...\n", iter);
     sort_serial(iter);
     sort_parallel_v1(iter);
+<<<<<<< HEAD
     sort_parallel_v2(iter);
+=======
+>>>>>>> cb7345e6a61e9fc4eff849e153a62bb95e2a40ec
 
     printf ("\nDone.\n");
     return 0;
